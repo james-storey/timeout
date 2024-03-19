@@ -1,4 +1,4 @@
-module github.com/gin-contrib/timeout
+module github.com/james-storey/timeout
 
 go 1.18
 
