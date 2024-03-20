@@ -41,9 +41,10 @@ func New(opts ...Option) gin.HandlerFunc {
 		panicChan := make(chan interface{}, 1)
 
 		w := c.Writer
+		cc := c.Copy()
 		buffer := bufPool.Get()
 		tw := NewWriter(w, buffer)
-		c.Writer = tw
+		cc.Writer = tw
 		buffer.Reset()
 
 		go func() {
@@ -52,14 +53,13 @@ func New(opts ...Option) gin.HandlerFunc {
 					panicChan <- p
 				}
 			}()
-			t.handler(c)
+			t.handler(cc)
 			finish <- struct{}{}
 		}()
 
 		select {
 		case p := <-panicChan:
 			tw.FreeBuffer()
-			c.Writer = w
 			panic(p)
 
 		case <-finish:
@@ -85,9 +85,7 @@ func New(opts ...Option) gin.HandlerFunc {
 			tw.FreeBuffer()
 			bufPool.Put(buffer)
 
-			cc := c.Copy()
-			cc.Writer = w
-			t.response(cc)
+			t.response(c)
 		}
 	}
 }
